@@ -4,7 +4,7 @@ close all
 clc
 
 %% Parameters
-vref = 1.45;
+vref = 3;
 
 % Physical parameters
 m = 1;
@@ -56,8 +56,8 @@ Fnl = @(theta) friction(theta, physics) - kv*theta;
 phi = @(theta) Fnl(theta+vref) - Fnl(vref);
 thetaT = linspace((-vref*1.05),0,100);
 thetaT = [thetaT, linspace(0,(vref*1.05))];
-lambda = lambdaMin3(physics, vref, vref);
-lambda2 = lambdaMin3(physics, vref, vref*0.8);
+lambda = lambdaMin(physics, vref, vref);
+lambda2 = lambdaMin(physics, vref, vref*0.8);
 plot(thetaT, phi(thetaT), 'LineWidth', 2);
 hold on
 plot(thetaT, -lambda*thetaT, '--', 'LineWidth', 2);
@@ -72,16 +72,15 @@ set(gcf, 'Position', [20, 20, 560, 320]);
 grid on
 axis([-vref*1.05, vref*1.05, min(-lambda*thetaT), max(-lambda*thetaT)])
 
-
+return
 % Global assessment
-% Pg = globalLMI(physics, vref);
 Pg = globalLMI(physics, vref);
-geomean(Pg,'all')
+min(eig(Pg))
 
 % Local assessment
 [vref1, vref2] = A0Hurwitz(physics)
 Pl = localLMI(physics, vref);
-eig(Pl)
+min(eig(Pl))
 
 % Simulation
 [ t, x, v, z, F ] = simulation( physics, simu, vref );

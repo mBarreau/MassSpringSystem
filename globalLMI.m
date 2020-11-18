@@ -12,10 +12,12 @@ function [ PgMax ] = globalLMI( physics, vref )
     % Define the decision variables
     Pg = sdpvar(2);
     tau1 = sdpvar(1);
-    tau1Prime = sdpvar(1);
     tau2 = sdpvar(1);
     tau3 = sdpvar(1);
     tau4 = sdpvar(1);
+    tau5 = sdpvar(1);
+    
+    eta = sdpvar(1);
     
     % Creation of Theta
     A = [-kv/m -k/m; 1 0];
@@ -41,29 +43,29 @@ function [ PgMax ] = globalLMI( physics, vref )
     
     tau0List = linspace(0, -2*max(real(eig(A))), 30);
     
-    geomeanMax = 0;
+    etaMax = 0;
     PgMax = nan;
     for tau0 = tau0List
 
         ThetaBar = Theta - tau0*Pi0 - tau1*Pi1 - tau2*Pi2 - tau3*Pi3;
-        ThetaBar2 = Theta - tau0*Pi0 - tau1Prime*Pi1 - tau4*Pi4;
+        ThetaBar2 = Theta - tau0*Pi0 - tau5*Pi1 - tau4*Pi4;
         
         % Soving the optimization problem    
-        Constraints = [(Pg >= 1e-5):'Positivity',...
+        Constraints = [(Pg >= eta*eye(2)):'Positivity',...
             (tau1 >= 0):'S-variable F_{max}',...
-            (tau1Prime >= 0):'S-variable F_{max}',...
             (tau2 >= 0):'S-variable F_{min}'...
             (tau3 >= 0):'S-variable sign'...
+            (tau5 >= 0):'S-variable F_{max}',...
             (ThetaBar <= -1e-5):'Negativity',...
             (ThetaBar2 <= -1e-5):'Negativity'];
 
         warning('off', 'YALMIP:strict');
         option = sdpsettings('verbose', 0, 'solver', 'mosek');
-        diagnostics = optimize(Constraints, -geomean(Pg), option);
+        diagnostics = optimize(Constraints, -eta, option);
 
         if diagnostics.problem == 0
-            if geomean(value(Pg),'all') >= geomeanMax
-                geomeanMax = geomean(value(Pg),'all');
+            if value(eta) >= etaMax
+                etaMax = value(eta);
                 PgMax = value(Pg);
             end
         end

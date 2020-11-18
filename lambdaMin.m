@@ -1,11 +1,10 @@
-function [lambdamin] = lambdaMin(physics, vref, vDesired)
+function [lambdaMin] = lambdaMin(physics, vref, rl)
 
     m = physics.m;
     g = physics.g;
     muS = physics.muS;
     muC = physics.muC;
     vs = physics.vs;
-    kv = physics.kv;
 
     f = @(x) 1 - exp((x.^2 + 2*x*vref)/vs^2) + 2*x.*(x+vref)/vs^2;
     
@@ -26,30 +25,13 @@ function [lambdamin] = lambdaMin(physics, vref, vDesired)
     vStarMinus = v;
     vStarPlus = v+10^(-epsilon);
     
-    if vref < vs/sqrt(2)
-        
-        if vDesired >= vStarMinus
-            lambdamin = 2*m*g*(muS - muC)*(vStarMinus + vref)*exp(-(vStarMinus + vref)^2/vs^2)/vs^2;
-        else
-            phi = friction(vDesired+vref,physics) - kv*vDesired - friction(vref,physics);
-            lambdamin = -phi/vDesired;
-        end
-        
+    partialPhi = @(eps1) -2*m*g*(muS - muC)*(eps1+vref)/vs^2*exp(-(eps1+vref)^2/vs^2);
+    phi = @(eps1) m*g*(muS - muC)*(exp(-((eps1+vref)/vs)^2) - exp(-(vref/vs)^2));
+
+    if max([abs(vStarMinus), abs(vStarPlus)]) <= rl
+        lambdaMin = max([-partialPhi(vStarMinus), -partialPhi(vStarPlus)]);
     else
-        
-        if -vDesired <= vStarPlus
-            lambdamin = 2*m*g*(muS - muC)*(vStarPlus + vref)*exp(-(vStarPlus + vref)^2/vs^2)/vs^2;
-        else
-            phi = friction(-vDesired+vref,physics) + kv*vDesired - friction(vref,physics);
-            lambdamin = phi/vDesired;
-        end
-        
-    end
-    
-%    lambdamax = min()
-    
-    if lambdamin <= 0
-        lambdamin = 2*m*g*(muS - muC)*(vs/sqrt(2))*exp(-1/2)/vs^2;
+        lambdaMin = -min([-phi(-rl)/rl, phi(rl)/rl]);
     end
 
 end
