@@ -72,7 +72,6 @@ set(gcf, 'Position', [20, 20, 560, 320]);
 grid on
 axis([-vref*1.05, vref*1.05, min(-lambda*thetaT), max(-lambda*thetaT)])
 
-return
 % Global assessment
 Pg = globalLMI(physics, vref);
 min(eig(Pg))
