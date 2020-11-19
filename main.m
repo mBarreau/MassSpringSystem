@@ -75,7 +75,7 @@ grid on
 axis([-vref*1.05, vref*1.05, min(-lambda*thetaT), max(-lambda*thetaT)])
 
 % GAS
-gas = globalAsympLMI(physics, vref)
+gas = globalAsympLMI(physics, vref);
 display(strcat(['GAS: ', num2str(gas)]))
 
 % Global assessment
@@ -86,7 +86,7 @@ display(strcat(['Minimum eigenvalue of Pg: ', num2str(min(eig(Pg)))]))
 [vref1, vref2] = A0Hurwitz(physics);
 display(strcat(['vref1: ', num2str(vref1), ' vref2:', num2str(vref2)]))
 Pl = localLMI(physics, vref);
-display(strcat(['Maximum eigenvalue of Pl: ', numstr(max(eig(Pl)))]))
+display(strcat(['Minimum eigenvalue of Pl: ', num2str(min(eig(Pl))), ' Maximum eigenvalue of Pl: ', num2str(max(eig(Pl)))]))
 
 % Simulation
 [ t, x, v, z, F ] = simulation( physics, simu, vref );
