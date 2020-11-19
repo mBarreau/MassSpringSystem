@@ -35,6 +35,8 @@ physics = struct('m', m, 'muS', muS, 'muC', muC, 'kv', kv, 'vs', vs,...
 simu = struct('deltaT', deltaT, 'tmax', tmax, 'x0', x0, 'v0', v0, 'z0', z0);
 simu2 = struct('deltaT', deltaT, 'tmax', tmax, 'x0', x0, 'v0', v02, 'z0', z02);
 
+display(strcat(['vref=', num2str(vref)]))
+
 %% Plot of the friction force
 figure
 thetaDot1 = -5:0.01:-0.01;
@@ -72,14 +74,19 @@ set(gcf, 'Position', [20, 20, 560, 320]);
 grid on
 axis([-vref*1.05, vref*1.05, min(-lambda*thetaT), max(-lambda*thetaT)])
 
+% GAS
+gas = globalAsympLMI(physics, vref)
+display(strcat(['GAS: ', num2str(gas)]))
+
 % Global assessment
 Pg = globalLMI(physics, vref);
-min(eig(Pg))
+display(strcat(['Minimum eigenvalue of Pg: ', num2str(min(eig(Pg)))]))
 
 % Local assessment
-[vref1, vref2] = A0Hurwitz(physics)
+[vref1, vref2] = A0Hurwitz(physics);
+display(strcat(['vref1: ', num2str(vref1), ' vref2:', num2str(vref2)]))
 Pl = localLMI(physics, vref);
-min(eig(Pl))
+display(strcat(['Maximum eigenvalue of Pl: ', numstr(max(eig(Pl)))]))
 
 % Simulation
 [ t, x, v, z, F ] = simulation( physics, simu, vref );

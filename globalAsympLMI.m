@@ -16,12 +16,11 @@ function [globalAsympStab] = globalAsympLMI(physics, vref)
     Pg = sdpvar(2);
     Pl = sdpvar(2);
     tau1 = sdpvar(1);
-    tau1Prime = sdpvar(1);
     tau2 = sdpvar(1);
     tau3 = sdpvar(1);
     tau4 = sdpvar(1);
+    tau5 = sdpvar(1);
     tau = sdpvar(1);
-    gamma = sdpvar(1);
     
     % Creation of Theta
     A = [-kv/m -k/m; 1 0];
@@ -54,32 +53,31 @@ function [globalAsympStab] = globalAsympLMI(physics, vref)
     
     for rl = linspace(vref, 1e-5, 30)
         
-        lambda = lambdaMin3(physics,vref,rl);
-        ThetaLocal = [A0'*Pl + Pl*A0 - 2*Gamma*(tau*Gamma + gamma)*(C'*C), Pl*B - (2*tau*Gamma + gamma)*C';...
-                B'*Pl - (2*tau*Gamma + gamma)*C, -2*tau];
+        lambda = lambdaMin(physics, vref, rl);
+        ThetaLocal = [A0'*Pl + Pl*A0 - 2*tau*Gamma*(Gamma + lambda)*(C'*C), Pl*B - tau*(2*Gamma + lambda)*C';...
+            B'*Pl - tau*(2*Gamma + lambda)*C, -2*tau];
         ThetaIncl = [Pl, C'; C, rl^2];
         
         for tau0 = tau0List
             
             ThetaBar = Theta - tau0*Pi0 - tau1*Pi1 - tau2*Pi2 - tau3*Pi3;
-            ThetaBar2 = Theta - tau0*Pi0 - tau1Prime*Pi1 - tau4*Pi4;
+            ThetaBar2 = Theta - tau0*Pi0 - tau5*Pi1 - tau4*Pi4;
         
             % Soving the optimization problem    
             Constraints = [(Pl >= 0):'Positivity 1',...
                 (Pg - Pl >= 0):'Attractor in Basin',...
                 (tau1 >= 0):'S-variable F_{max}',...
-                (tau1Prime >= 0):'S-variable F_{max}',...
+                (tau5 >= 0):'S-variable F_{max}',...
                 (tau2 >= 0):'S-variable F_{min}'...
                 (tau3 >= 0):'S-variable sign'...
                 (ThetaBar <= -1e-5):'Negativity',...
                 (ThetaBar2 <= -1e-5):'Negativity',...
                 (tau >= 0):'S-variable',...
                 (ThetaLocal <= -1e-5):'Negativity',...
-                (gamma >= tau*lambda):'lambdaMin',...
                 (ThetaIncl >= 0):'Inclusion'];
 
             warning('off', 'YALMIP:strict');
-            option = sdpsettings('verbose', 0, 'solver', 'mosek');
+            option = sdpsettings('verbose', 0, 'solver', 'mosek', 'cachesolvers', 1);
             diagnostics = optimize(Constraints, {}, option);
 
             if diagnostics.problem == 0

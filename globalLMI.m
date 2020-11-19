@@ -60,7 +60,7 @@ function [ PgMax ] = globalLMI( physics, vref )
             (ThetaBar2 <= -1e-5):'Negativity'];
 
         warning('off', 'YALMIP:strict');
-        option = sdpsettings('verbose', 0, 'solver', 'mosek');
+        option = sdpsettings('verbose', 0, 'solver', 'mosek', 'cachesolvers', 1);
         diagnostics = optimize(Constraints, -eta, option);
 
         if diagnostics.problem == 0
