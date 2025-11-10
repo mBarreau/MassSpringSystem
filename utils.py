@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 
-
 def add_ellipse(ax, P, v_ref, z_inf, color='orange', linewidth=1.0, label=None):
     if P is None:
         return
@@ -18,7 +17,6 @@ def add_ellipse(ax, P, v_ref, z_inf, color='orange', linewidth=1.0, label=None):
                   angle=angle, edgecolor=color, facecolor='none',
                   linewidth=linewidth, label=label)
     ax.add_patch(ell)
-
 
 def plot_results(T, V, Z, U, v_target, switch_times, switch_vrefs, Pl_entries):
     tab_colors = plt.get_cmap('tab20').colors
@@ -66,4 +64,58 @@ def plot_results(T, V, Z, U, v_target, switch_times, switch_vrefs, Pl_entries):
     axs[2].legend(loc='best', fontsize='small')
     """ axs[2].set_ylim(-5,0)
     axs[2].set_xlim(0, 5) """
+    plt.show()
+
+def plot_results_observer(T, V, Z, Zhat, U, Utrue,
+                          v_target, switch_times, switch_vrefs, Pl_entries):
+
+    tab_colors = plt.get_cmap('tab20').colors
+    colors = np.array([tab_colors[i % 20] for i in range(len(Pl_entries))])
+    fig, axs = plt.subplots(1, 3, figsize=(18, 5), constrained_layout=True)
+
+    axs[0].plot(T, V, label="v (true)")
+    axs[0].axhline(v_target, linestyle='--', color='k', label='v_target')
+    axs[0].scatter(switch_times, switch_vrefs, color='red', marker='o', label='stage switch')
+    axs[0].set_title("Velocity vs time")
+    axs[0].set_xlabel("t [s]")
+    axs[0].set_ylabel("v [m/s]")
+    axs[0].legend()
+    axs[0].grid(True)
+
+    axs[1].plot(T, U, '-', color='green', linewidth=1.2, label="u (applied, from ẑ)")
+    axs[1].plot(T, Utrue, '--', color='blue', linewidth=0.8, label="u (applied, from z)")
+    axs[1].set_title("Control input")
+    axs[1].set_xlabel("t [s]")
+    axs[1].set_ylabel("u")
+    axs[1].legend()
+    axs[1].grid(True)
+
+    switch_indices = []
+    for t in switch_times:
+        idx_t = np.searchsorted(T, t, side='right') - 1
+        switch_indices.append(max(0, idx_t))
+
+    for i, entry in enumerate(Pl_entries):
+        color = colors[i] if i < len(colors) else 'gray'
+        add_ellipse(axs[2], entry['P'], entry['v_ref'], entry['z_inf'],
+                    color=color, linewidth=1.2,
+                    label=f"Pl v={entry['v_ref']:.3g}")
+
+        seg_start = switch_indices[i-1] if i-1 >= 0 and i-1 < len(switch_indices) else 0
+        seg_end = switch_indices[i] if i < len(switch_indices) else len(T)-1
+        seg_start = max(0, seg_start)
+        seg_end = min(len(V)-1, seg_end)
+
+        if seg_end > seg_start:
+            axs[2].plot(V[seg_start:seg_end+1], Z[seg_start:seg_end+1],'--', color=color, linewidth=1.2, label=None)
+            axs[2].plot(V[seg_start:seg_end+1], Zhat[seg_start:seg_end+1],'-', color=color, linewidth=1.6, label=None)
+
+    axs[2].set_title("Phase portrait with ROA ellipses\n(true z: solid, estimated ẑ: dashed)")
+    axs[2].set_xlabel("v [m/s]")
+    axs[2].set_ylabel("z [m]")
+    axs[2].grid(True)
+    axs[2].legend(loc='best', fontsize='small')
+    """ xs[2].set_ylim(-5,0)
+    axs[2].set_xlim(0, 5) """
+
     plt.show()
